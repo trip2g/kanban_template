@@ -3,7 +3,8 @@ import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { sha256Base64 } from './api'
 import { parseBoard, serializeBoard } from './format'
-import { moveCard, addCard, editCard, deleteCard, toggleCard, cardLine, applyBoardToBaseline } from './ops'
+import { moveCard, addCard, editCard, deleteCard, toggleCard, cardLine, applyBoardToBaseline, addList, renameList, deleteList, moveList, applyStructuralChange, mergeColumns } from './ops'
+import type { KanbanList } from './format'
 
 const SAMPLE = `---
 kanban-plugin: basic
@@ -248,4 +249,130 @@ kanban-plugin: basic
   assert.ok(newMd.includes('> important note'), 'unmodeled line preserved when moving out of col')
   assert.ok(!newMd.split('## Done')[0].includes('- [ ] Ticket A'), 'Ticket A no longer in Backlog section')
   assert.ok(newMd.split('## Done')[1].includes('- [ ] Ticket A'), 'Ticket A appears in Done section')
+})
+
+// ── List (column) reducers: round-trip through serialize/parse ───────────────
+
+test('addList adds a ## heading that round-trips', () => {
+  const b = parseBoard(SAMPLE)
+  const next = addList(b, 'Review')
+  assert.equal(next.lists.length, 3)
+  assert.equal(next.lists[2].title, 'Review')
+  assert.equal(next.lists[2].cards.length, 0)
+  const round = parseBoard(serializeBoard(next))
+  assert.deepEqual(round.lists.map(l => l.title), ['To Do', 'In Progress', 'Review'])
+  assert.equal(round.lists[2].cards.length, 0)
+})
+
+test('renameList changes the ## heading and round-trips (cards travel)', () => {
+  const b = parseBoard(SAMPLE)
+  const next = renameList(b, 0, 'Backlog')
+  assert.equal(next.lists[0].title, 'Backlog')
+  const round = parseBoard(serializeBoard(next))
+  assert.deepEqual(round.lists.map(l => l.title), ['Backlog', 'In Progress'])
+  assert.deepEqual(round.lists[0].cards.map(c => c.text), ['Task 1', 'Task 2'])
+})
+
+test('deleteList removes the ## heading and round-trips', () => {
+  const b = parseBoard(SAMPLE)
+  const next = deleteList(b, 0)
+  assert.equal(next.lists.length, 1)
+  const round = parseBoard(serializeBoard(next))
+  assert.deepEqual(round.lists.map(l => l.title), ['In Progress'])
+})
+
+test('moveList reorders the ## headings and round-trips (cards travel)', () => {
+  const b = parseBoard(SAMPLE)
+  const next = moveList(b, 0, 1)
+  assert.deepEqual(next.lists.map(l => l.title), ['In Progress', 'To Do'])
+  const round = parseBoard(serializeBoard(next))
+  assert.deepEqual(round.lists.map(l => l.title), ['In Progress', 'To Do'])
+  assert.deepEqual(round.lists[1].cards.map(c => c.text), ['Task 1', 'Task 2'])
+})
+
+test('list reducers do not mutate the original board', () => {
+  const b = parseBoard(SAMPLE)
+  addList(b, 'X')
+  renameList(b, 0, 'Y')
+  deleteList(b, 0)
+  moveList(b, 0, 1)
+  assert.equal(b.lists.length, 2, 'original must be unchanged')
+  assert.equal(b.lists[0].title, 'To Do')
+  assert.equal(b.lists[1].title, 'In Progress')
+})
+
+test('frontmatter and settings survive list reducers', () => {
+  const b = parseBoard(SAMPLE)
+  for (const result of [addList(b, 'X'), renameList(b, 0, 'Y'), deleteList(b, 1), moveList(b, 0, 1)]) {
+    assert.equal(result.frontmatter, b.frontmatter, 'frontmatter preserved')
+    assert.equal(result.settings, b.settings, 'settings preserved')
+  }
+})
+
+test('applyStructuralChange splices columns while preserving frontmatter + settings', () => {
+  const b = parseBoard(SAMPLE)
+  const next = addList(b, 'Review')
+  const md = applyStructuralChange(SAMPLE, next.lists)
+  assert.ok(md.startsWith('---\nkanban-plugin: basic\n---'), 'frontmatter preserved')
+  assert.ok(md.includes('## Review'), 'new column heading spliced in')
+  assert.ok(md.includes('%% kanban:settings'), 'settings block preserved')
+  const round = parseBoard(md)
+  assert.deepEqual(round.lists.map(l => l.title), ['To Do', 'In Progress', 'Review'])
+})
+
+// ── mergeColumns: column-keyed 3-way merge (live-sync rebase) ─────────────────
+
+const col = (title: string, cards: string[] = [], complete = false): KanbanList => ({
+  title,
+  complete,
+  cards: cards.map(text => ({ text, checked: false })),
+})
+const titles = (lists: KanbanList[] | null) => (lists ? lists.map(l => l.title) : null)
+
+test('mergeColumns: local rename + remote column add → both survive', () => {
+  const base = [col('To Do', ['Task 1']), col('In Progress', ['Done'])]
+  const local = [col('Backlog', ['Task 1']), col('In Progress', ['Done'])]       // renamed To Do→Backlog
+  const remote = [col('To Do', ['Task 1']), col('In Progress', ['Done']), col('Remote', ['R'])] // added Remote
+  const merged = mergeColumns(base, local, remote)
+  assert.deepEqual(titles(merged), ['Backlog', 'In Progress', 'Remote'])
+})
+
+test('mergeColumns: only-local card edit kept; only-remote column kept', () => {
+  const base = [col('A', ['x']), col('B', ['y'])]
+  const local = [col('A', ['x EDITED']), col('B', ['y'])]              // edited A's card
+  const remote = [col('A', ['x']), col('B', ['y']), col('C', ['z'])]   // added C
+  const merged = mergeColumns(base, local, remote)
+  assert.deepEqual(titles(merged), ['A', 'B', 'C'])
+  assert.equal(merged![0].cards[0].text, 'x EDITED', 'local card edit preserved')
+  assert.equal(merged![2].cards[0].text, 'z', 'remote-added column preserved')
+})
+
+test('mergeColumns: only-remote card add to an untouched column is kept', () => {
+  const base = [col('A', ['x']), col('B', ['y'])]
+  const local = [col('A', ['x']), col('B', ['y']), col('New', [])]     // local added empty column
+  const remote = [col('A', ['x', 'x2']), col('B', ['y'])]             // remote added a card to A
+  const merged = mergeColumns(base, local, remote)
+  assert.deepEqual(titles(merged), ['A', 'B', 'New'])
+  assert.deepEqual(merged![0].cards.map(c => c.text), ['x', 'x2'], 'remote card-add to A preserved')
+})
+
+test('mergeColumns: both edit the same column differently → conflict (null)', () => {
+  const base = [col('A', ['x'])]
+  const local = [col('A', ['x LOCAL'])]
+  const remote = [col('A', ['x REMOTE'])]
+  assert.equal(mergeColumns(base, local, remote), null)
+})
+
+test('mergeColumns: local delete honoured when remote untouched', () => {
+  const base = [col('A', ['x']), col('B', ['y'])]
+  const local = [col('A', ['x'])]                 // deleted B
+  const remote = [col('A', ['x']), col('B', ['y'])]
+  assert.deepEqual(titles(mergeColumns(base, local, remote)), ['A'])
+})
+
+test('mergeColumns: local delete vs remote edit of same column → conflict (null)', () => {
+  const base = [col('A', ['x']), col('B', ['y'])]
+  const local = [col('A', ['x'])]                 // deleted B
+  const remote = [col('A', ['x']), col('B', ['y', 'y2'])] // remote edited B
+  assert.equal(mergeColumns(base, local, remote), null)
 })
