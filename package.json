@@ -6,7 +6,7 @@
     "build": "node esbuild.mjs",
     "watch": "node esbuild.mjs --watch",
     "test": "npm run test:unit && npm run test:integration",
-    "test:unit": "npx tsx --test src/smoke.test.ts",
+    "test:unit": "npx tsx --test src/smoke.test.ts src/notes.test.ts",
     "test:integration": "vitest run"
   },
   "dependencies": {
