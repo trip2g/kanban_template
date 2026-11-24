@@ -17,6 +17,7 @@ interface KanbanData {
   editable: boolean
   // Server-escaped display name of the last editor (admin-only; absent otherwise).
   lastEditedBy?: string
+  links?: Record<string, string>
 }
 
 function getData(): KanbanData {
@@ -43,6 +44,7 @@ createRoot(mountEl).render(
       content={data.content}
       editable={data.editable}
       lastEditedBy={data.lastEditedBy}
+      links={data.links}
     />
   </React.StrictMode>
 )

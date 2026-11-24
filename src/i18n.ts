@@ -11,6 +11,8 @@ interface LangStrings {
   cardPlaceholder: string
   columnPlaceholder: string
   deleteCard: string
+  cardDeleted: string
+  undo: string
   deleteColumn: string
   dragColumn: string
   doubleClickEdit: string
@@ -39,6 +41,8 @@ const STRINGS: Record<Lang, LangStrings> = {
     cardPlaceholder: 'Card text...',
     columnPlaceholder: 'Column title...',
     deleteCard: 'Delete card',
+    cardDeleted: 'Card deleted',
+    undo: 'Undo',
     deleteColumn: 'Delete column',
     dragColumn: 'Drag to reorder column',
     doubleClickEdit: 'Double-click to edit',
@@ -66,6 +70,8 @@ const STRINGS: Record<Lang, LangStrings> = {
     cardPlaceholder: 'Текст карточки…',
     columnPlaceholder: 'Название колонки…',
     deleteCard: 'Удалить карточку',
+    cardDeleted: 'Карточка удалена',
+    undo: 'Отменить',
     deleteColumn: 'Удалить колонку',
     dragColumn: 'Перетащить для изменения порядка',
     doubleClickEdit: 'Двойной клик для редактирования',
