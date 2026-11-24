@@ -1,8 +1,11 @@
 import React from 'react'
 
+export type LinkMap = Record<string, string>
+
 /** Render inline markdown: **bold**, `code`, [[wikilinks]]. Falls back to plain text. */
 export function renderMarkdown(
   text: string,
+  links: LinkMap = {},
 ): React.ReactElement {
   const segments: React.ReactElement[] = []
   // Matches **bold**, `code`, [[Page]] or [[Page|alias]]
@@ -28,7 +31,7 @@ export function renderMarkdown(
       const target = pipeIdx !== -1 ? inner.slice(0, pipeIdx) : inner
       const label = pipeIdx !== -1 ? inner.slice(pipeIdx + 1) : inner
       segments.push(
-        <a key={key++} href={`/${target}`}>
+        <a key={key++} href={links[target] ?? `/${target}`}>
           {label}
         </a>
       )

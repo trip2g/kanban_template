@@ -65,12 +65,27 @@
 <span id="kanban-path" hidden>{{ note.Path() }}</span>
 <textarea id="kanban-content" style="display:none;visibility:hidden">{{ note.ContentString() }}</textarea>
 
+<!--
+  Wikilink targets resolved by the server: [target, url] pairs, one per wikilink
+  in the board. trip2g serves notes at transliterated slugs, so a card link built
+  from the raw wikilink text would 404; the bundle looks the target up here.
+  Unresolved targets carry an empty url and keep the raw-path fallback.
+-->
+<script type="application/json" id="kanban-links">[{{ range i, part := split(note.ContentString(), "[[") }}{{ if i > 0 }}{{ target := split(split(split(part, "]]")[0], "|")[0], "#")[0] }}{{ resolved := nvs.ByPath(target + ".md") }}{{ if resolved == nil }}{{ resolved = nvs.ByWikilink(target) }}{{ end }}{{ if i > 1 }},{{ end }}[{{ json(target) }},{{ if resolved != nil }}{{ json(resolved.PermalinkEncoded()) }}{{ else }}""{{ end }}]{{ end }}{{ end }}]</script>
+
 <script>
   (function () {
     var meta = JSON.parse(document.getElementById('kanban-meta').textContent || '{}')
     // Path comes from the escaped hidden span (same channel as content + the byline).
     meta.path = document.getElementById('kanban-path')?.textContent || ''
     meta.content = document.getElementById('kanban-content').value
+    // Wikilink target -> server-resolved URL.
+    meta.links = {}
+    try {
+      JSON.parse(document.getElementById('kanban-links').textContent || '[]').forEach(function (p) {
+        if (p[1]) meta.links[p[0]] = p[1]
+      })
+    } catch (e) {}
     // Admin-only: the last-editor display name, server-escaped into a hidden span.
     meta.lastEditedBy = document.getElementById('kanban-edited-by')?.textContent || ''
     window.__trip2g_kanban = meta
