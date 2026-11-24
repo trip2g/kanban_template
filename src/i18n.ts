@@ -27,6 +27,11 @@ interface LangStrings {
   notABoardBody: string
   lastEditedBy: string
   saveFailed: string
+  openInNewTab: string
+  close: string
+  sortLabel: string
+  sortByOrder: string
+  sortByPriority: string
   // Plural keys — call t(lang, key, { count }) to get the right form.
   columns: PluralEntry
   cards: PluralEntry
@@ -57,6 +62,11 @@ const STRINGS: Record<Lang, LangStrings> = {
     notABoardBody: 'This note has "layout: kanban" but no columns. Add "## Column" headings to create columns, or remove "layout: kanban" from the frontmatter.',
     lastEditedBy: 'Last edited by',
     saveFailed: 'Save failed: ',
+    openInNewTab: 'Open in new tab',
+    close: 'Close',
+    sortLabel: 'Sort cards',
+    sortByOrder: 'By order',
+    sortByPriority: 'By priority',
     columns: { one: 'column', other: 'columns' },
     cards: { one: 'card', other: 'cards' },
     deleteColumnConfirm: {
@@ -86,6 +96,11 @@ const STRINGS: Record<Lang, LangStrings> = {
     notABoardBody: 'В этой заметке указан «layout: kanban», но нет колонок. Добавьте заголовки «## Колонка», чтобы создать колонки, или удалите «layout: kanban» из метаданных.',
     lastEditedBy: 'Последняя правка:',
     saveFailed: 'Ошибка сохранения: ',
+    openInNewTab: 'Открыть в новой вкладке',
+    close: 'Закрыть',
+    sortLabel: 'Сортировка карточек',
+    sortByOrder: 'По порядку',
+    sortByPriority: 'По приоритету',
     // Russian plural: one (1, 21, 31…), few (2–4, 22–24…), many (0, 5–20, 25–30…).
     columns: { one: 'колонка', few: 'колонки', many: 'колонок' },
     cards: { one: 'карточка', few: 'карточки', many: 'карточек' },

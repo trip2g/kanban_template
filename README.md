@@ -45,8 +45,16 @@ else to upload. Open the note's page and the board appears.
 - Drag cards within and between columns; add, double-click-to-edit, delete, and
   checkbox-toggle cards.
 - Renders inline markdown in cards: `**bold**`, `` `code` ``, and `[[wikilinks]]`.
-  Clicking a wikilink opens the linked note in a slide-in preview drawer (iframe);
-  ⌘/Ctrl/middle-click opens it in a new tab.
+  Clicking a card's link (or its summary line) opens the linked note in a side panel
+  over the board, with a close button, `Esc`, and an "open in a new tab" link;
+  ⌘/Ctrl/middle-click opens it in a new tab instead.
+- Shows two lines of text from the linked note under the card title: its `summary`
+  frontmatter field, else the first sentence of its body. The linked note's
+  `priority` (`высокий`/`средний`/`низкий` or `high`/`medium`/`low`) shows as a label.
+- A header toggle sorts the cards of every column by the linked note's `priority`,
+  then its `due` date (notes without a priority go last). The choice is remembered in
+  the browser; the saved board order is not changed. While sorted by priority, cards
+  cannot be reordered inside a column.
 - **Saves in place** via the `updateNotes` GraphQL mutation: a single-line edit
   (toggle/edit/delete/add) becomes a surgical `find`/`replace` patch; a move
   rewrites the affected lines via `upsert`. Optimistic concurrency via
