@@ -868,3 +868,16 @@ body {
   border: 0;
   background: #fff;
 }
+
+.kanban-card-id {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  vertical-align: baseline;
+}
