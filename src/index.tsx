@@ -18,7 +18,7 @@ interface KanbanData {
   // Server-escaped display name of the last editor (admin-only; absent otherwise).
   lastEditedBy?: string
   links?: Record<string, string>
-  notes?: Record<string, { summary?: string; priority?: string; due?: string; body?: string }>
+  notes?: Record<string, { summary?: string; priority?: string; due?: string; body?: string; id?: string }>
 }
 
 function getData(): KanbanData {

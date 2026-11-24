@@ -5,6 +5,7 @@ export interface NoteInfo {
   priority?: string
   due?: string
   body?: string
+  id?: string
 }
 
 export type NoteMap = Record<string, NoteInfo>

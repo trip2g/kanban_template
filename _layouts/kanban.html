@@ -67,14 +67,14 @@
 
 <!--
   Wikilink targets resolved by the server, one entry per wikilink in the board:
-  [target, url, summary, priority, due, body-head]. trip2g serves notes at
+  [target, url, summary, priority, due, body-head, id]. trip2g serves notes at
   transliterated slugs, so a card link built from the raw wikilink text would 404;
   the bundle looks the target up here. The linked note's summary, priority and due
   frontmatter feed the card text and the priority sort; when a note has no summary,
   its first 12 lines after the frontmatter let the bundle show the first sentence.
   Unresolved targets carry an empty url and keep the raw-path fallback.
 -->
-<script type="application/json" id="kanban-links">[{{ range i, part := split(note.ContentString(), "[[") }}{{ if i > 0 }}{{ target := split(split(split(part, "]]")[0], "|")[0], "#")[0] }}{{ resolved := nvs.ByPath(target + ".md") }}{{ if resolved == nil }}{{ resolved = nvs.ByWikilink(target) }}{{ end }}{{ if i > 1 }},{{ end }}{{ if resolved != nil }}{{ summary := resolved.M().GetString("summary", "") }}{{ body := "" }}{{ if summary == "" }}{{ ps := split(resolved.ContentString(), "---") }}{{ body = resolved.ContentString() }}{{ if len(ps) > 2 && ps[0] == "" }}{{ body = ps[2] }}{{ end }}{{ end }}[{{ json(target) }},{{ json(resolved.PermalinkEncoded()) }},{{ json(summary) }},{{ json(resolved.M().GetString("priority", "")) }},{{ json(resolved.M().GetString("due", "")) }},[{{ range li, line := split(body, "\n") }}{{ if li < 12 }}{{ if li > 0 }},{{ end }}{{ json(line) }}{{ end }}{{ end }}]]{{ else }}[{{ json(target) }},""]{{ end }}{{ end }}{{ end }}]</script>
+<script type="application/json" id="kanban-links">[{{ range i, part := split(note.ContentString(), "[[") }}{{ if i > 0 }}{{ target := split(split(split(part, "]]")[0], "|")[0], "#")[0] }}{{ resolved := nvs.ByPath(target + ".md") }}{{ if resolved == nil }}{{ resolved = nvs.ByWikilink(target) }}{{ end }}{{ if i > 1 }},{{ end }}{{ if resolved != nil }}{{ summary := resolved.M().GetString("summary", "") }}{{ body := "" }}{{ if summary == "" }}{{ ps := split(resolved.ContentString(), "---") }}{{ body = resolved.ContentString() }}{{ if len(ps) > 2 && ps[0] == "" }}{{ body = ps[2] }}{{ end }}{{ end }}[{{ json(target) }},{{ json(resolved.PermalinkEncoded()) }},{{ json(summary) }},{{ json(resolved.M().GetString("priority", "")) }},{{ json(resolved.M().GetString("due", "")) }},[{{ range li, line := split(body, "\n") }}{{ if li < 12 }}{{ if li > 0 }},{{ end }}{{ json(line) }}{{ end }}{{ end }}],{{ json(resolved.M().GetString("id", "")) }}]{{ else }}[{{ json(target) }},""]{{ end }}{{ end }}{{ end }}]</script>
 
 <script>
   (function () {
@@ -89,7 +89,7 @@
       JSON.parse(document.getElementById('kanban-links').textContent || '[]').forEach(function (p) {
         if (!p[1]) return
         meta.links[p[0]] = p[1]
-        meta.notes[p[0]] = { summary: p[2] || '', priority: p[3] || '', due: p[4] || '', body: (p[5] || []).join('\n') }
+        meta.notes[p[0]] = { summary: p[2] || '', priority: p[3] || '', due: p[4] || '', body: (p[5] || []).join('\n'), id: p[6] || '' }
       })
     } catch (e) {}
     // Admin-only: the last-editor display name, server-escaped into a hidden span.

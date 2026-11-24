@@ -53,7 +53,7 @@ const LINKS = {
 const NOTES = {
   'tasks/low': { summary: 'Low summary.', priority: 'низкий' },
   'tasks/none': { body: '---\ntitle: x\n---\n\n# x\n\nBody sentence here. Second one.' },
-  'tasks/high': { summary: 'High summary.', priority: 'высокий', due: '2026-11-24' },
+  'tasks/high': { summary: 'High summary.', priority: 'высокий', due: '2026-11-24', id: 'T-12' },
   'tasks/mid': { summary: 'Mid summary.', priority: 'средний' },
 }
 
@@ -87,6 +87,16 @@ describe('card summary', () => {
   test('priority label shows on the card', () => {
     renderBoard()
     expect(screen.getByText('высокий')).toBeTruthy()
+  })
+})
+
+describe('task id', () => {
+  test('the id shows before the title and in the overlay header', async () => {
+    const user = userEvent.setup()
+    renderBoard()
+    expect(screen.getByText('T-12').className).toContain('kanban-card-id')
+    await user.click(screen.getByText('High task'))
+    expect(document.querySelector('.kanban-overlay-title')?.textContent).toBe('T-12 · High task')
   })
 })
 
